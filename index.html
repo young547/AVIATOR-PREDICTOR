@@ -23,6 +23,9 @@
     .site-bar {width:80%;margin:40px auto 0 auto;padding:20px 0;background:#111;border:2px solid #00ff00;color:#00ff00;font-size:28px;font-weight:bold;cursor:pointer;transition:background .3s;}
     .site-bar:hover {background:#00ff00;color:black;}
     .site-label {color:#00ff00;margin-bottom:10px;font-size:24px;}
+    /* New: Share red bar */
+    .share-red-bar {width:80%;margin:20px auto;padding:20px 0;background:red;border:2px solid red;color:black;font-size:24px;font-weight:bold;cursor:pointer;display:block;text-decoration:none;}
+    .share-red-bar.disabled {opacity:0.6;cursor:not-allowed;}
     #matrix-canvas {position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:-1;pointer-events:none;}
     #eliakim-watermark {
       position:fixed;
@@ -113,6 +116,66 @@ setInterval(function(){
 // State
 let selectedSite = null;
 
+// New: Share gate logic
+const requiredShares = 5;
+let shareCount = 0;
+let countdownSeconds = 10;
+let countdownTimerId = null;
+let countdownStarted = false;
+const shareTargetUrl = 'https://aviator-predictor-silk.vercel.app/';
+
+function updateShareUI(){
+  const progress = document.getElementById('share-progress');
+  const countdown = document.getElementById('share-countdown');
+  const proceedBtn = document.getElementById('proceed-button');
+  if (!progress) return;
+  progress.textContent = shareCount + '/' + requiredShares + ' shares';
+  if (shareCount >= requiredShares && !countdownStarted) {
+    countdownStarted = true;
+    countdown.classList.remove('hidden');
+    let remaining = countdownSeconds;
+    countdown.textContent = 'Please wait ' + remaining + 's before proceeding...';
+    countdownTimerId = setInterval(function(){
+      remaining--;
+      if (remaining <= 0) {
+        clearInterval(countdownTimerId);
+        countdown.classList.add('hidden');
+        proceedBtn.classList.remove('hidden');
+      } else {
+        countdown.textContent = 'Please wait ' + remaining + 's before proceeding...';
+      }
+    }, 1000);
+  }
+}
+
+function handleShareClick(){
+  try {
+    const text = 'Access the Aviator Predictor here: ' + shareTargetUrl;
+    const whatsappUrl = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(text);
+    if (navigator.share) {
+      navigator.share({ title: 'Aviator Predictor', text, url: shareTargetUrl }).catch(function(){});
+    } else {
+      window.open(whatsappUrl, '_blank');
+    }
+  } catch(e) {}
+  if (shareCount < requiredShares) {
+    shareCount++;
+    updateShareUI();
+  }
+  if (shareCount >= requiredShares) {
+    const shareLink = document.getElementById('share-link');
+    if (shareLink) shareLink.classList.add('disabled');
+  }
+  return false;
+}
+
+function proceedAfterShare(){
+  document.getElementById('share-page').style.display='none';
+  document.getElementById('page1').style.display='block';
+}
+
+window.addEventListener('load', function(){ updateShareUI(); });
+
 // Payment flow
 function showScreenshotBar(){document.getElementById('screenshot-bar').classList.remove('hidden')}
 function paymentDone(){
@@ -167,8 +230,23 @@ function predictCrash(){
 }
 </script>
 
+<!-- New: Share gate page -->
+<div id="share-page">
+  <h1 class="noselect">AVIATOR-PREDICTOR</h1>
+  <div class="box noselect">
+    <p style="color:#00ff00;">Share this link to 5 WhatsApp groups or friends.</p>
+    <a href="#" id="share-link" class="share-red-bar" onclick="return handleShareClick()">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" style="width:20px;vertical-align:middle;margin-right:8px;">SHARE LINK
+    </a>
+    <div id="share-progress" class="success" style="margin-top:10px;">0/5 shares</div>
+    <div id="share-countdown" class="error hidden" style="margin-top:10px;">Please wait 10s before proceeding...</div>
+    <button id="proceed-button" class="green-button hidden" onclick="proceedAfterShare()">PROCEED</button>
+  </div>
+  <p style="color:red;margin-top:50px;" class="noselect">DEVELOPER BY ELIAKIM</p>
+</div>
+
 <!-- Payment page -->
-<div id="page1">
+<div id="page1" style="display:none;">
   <h1 class="noselect">AVIATOR-PREDICTOR</h1>
   <div class="box noselect">
     <a href="https://wa.me/254739320033" target="_blank" class="green-button">
