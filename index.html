@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Aviator AI Prediction Tool</title>
+  <style>
+    body{background-color:black;color:red;font-family:monospace;text-align:center;padding:20px;position:relative;}
+    h1{color:red;font-weight:bold}
+    .box{border:2px solid red;padding:15px;margin:15px auto;width:80%}
+    .button,.green-button{border:2px solid red;background:black;color:red;padding:10px 30px;cursor:pointer;font-weight:bold;font-size:16px;margin:10px 0;text-decoration:none;display:inline-block}
+    .button:hover{background:red;color:black;transition:.3s}
+    .green-button{color:#00ff00;border:2px solid #00ff00}
+    .green-button:hover{background:#00ff00;color:black;transition:.3s;text-decoration:none}
+    a{color:red;text-decoration:underline}
+    .hidden{display:none}
+    .error{color:#ff0000;font-weight:bold;margin-top:10px}
+    .success{color:#00ff00;font-weight:bold;margin-top:10px}
+    .input-bar{border:2px solid red;background:black;color:red;font-weight:bold;font-size:24px;text-align:center;margin:5px}
+    #prediction-result{color:#00ff00;font-size:22px;font-weight:bold;margin-top:20px}
+    .noselect, input, button, a { user-select: none; }
+    img {pointer-events:none;user-drag:none;-webkit-user-drag:none;}
+    .site-bar {width:80%;margin:40px auto 0 auto;padding:20px 0;background:#111;border:2px solid #00ff00;color:#00ff00;font-size:28px;font-weight:bold;cursor:pointer;transition:background .3s;}
+    .site-bar:hover {background:#00ff00;color:black;}
+    .site-label {color:#00ff00;margin-bottom:10px;font-size:24px;}
+    #matrix-canvas {position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:-1;pointer-events:none;}
+    #eliakim-watermark {
+      position:fixed;
+      bottom:10px;
+      right:10px;
+      color:#00ff00;
+      opacity:0.25;
+      font-size:20px;
+      pointer-events:none;
+      z-index:9999;
+    }
+  </style>
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+</head>
+<body oncopy="return false" oncut="return false" onpaste="return false">
+<canvas id="matrix-canvas"></canvas>
+<script>
+// Matrix Rain (always visible)
+(function matrixRain(){
+  const canvas = document.getElementById('matrix-canvas');
+  const ctx = canvas.getContext('2d');
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+  const letters = 'アァイィウヴエェオカガキギクグケゲコゴサザシジスズセゼソゾタダチヂッツヅテデトドナニヌネノハバパヒビピフブプヘベペホボABCDEFGHIJKLMNOPQRSTUVWXYZ123456789@#$%^&*()*&^%';
+  const fontSize = 18;
+  let columns = Math.floor(window.innerWidth / fontSize);
+  let drops = Array(columns).fill(1);
+  function drawMatrix() {
+    ctx.fillStyle = 'rgba(0,0,0,0.1)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.font = fontSize + 'px monospace';
+    ctx.fillStyle = '#00ff00';
+    for (let i = 0; i < drops.length; i++) {
+      const text = letters[Math.floor(Math.random() * letters.length)];
+      ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+      if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+      drops[i]++;
+    }
+  }
+  setInterval(drawMatrix, 50);
+})();
+
+// Security
+(function(){
+  document.addEventListener('contextmenu',function(e){e.preventDefault()});
+  document.addEventListener('selectstart',function(e){e.preventDefault()});
+  document.addEventListener('dragstart',function(e){e.preventDefault()});
+  document.onkeydown=function(e){
+    if (
+      e.keyCode==123 ||
+      (e.ctrlKey&&e.shiftKey&&e.keyCode==73) ||
+      (e.ctrlKey&&e.keyCode==85) ||
+      (e.ctrlKey&&e.keyCode==83) ||
+      (e.ctrlKey&&e.keyCode==67) ||
+      (e.ctrlKey&&e.keyCode==80) ||
+      (e.key=="PrintScreen")
+    ) { 
+      alert("Action blocked for security reasons."); 
+      return false; 
+    }
+  };
+  window.addEventListener('keyup',function(e){
+    if (e.key=="PrintScreen"){navigator.clipboard.writeText("Copyright © 2025 Mr. Eliakim");}
+  });
+  document.body.addEventListener('copy',e=>e.preventDefault());
+  document.body.addEventListener('cut',e=>e.preventDefault());
+  document.body.addEventListener('paste',e=>e.preventDefault());
+  console.log('%c© 2025 Powered by Mr. Eliakim. Unauthorized copying prohibited.','color:#00ff00;font-size:16px;');
+  (function(z){var a=z.split('').reverse().join('');return a;})('SecurityByEliakim');
+})();
+
+setInterval(function(){
+  let mark = document.getElementById('eliakim-watermark');
+  if (!mark) {
+    mark = document.createElement('div');
+    mark.id = 'eliakim-watermark';
+    mark.innerText = '© 2025 Powered by Mr. Eliakim';
+    document.body.appendChild(mark);
+  }
+},4000);
+
+// State
+let selectedSite = null;
+
+// Payment flow
+function showScreenshotBar(){document.getElementById('screenshot-bar').classList.remove('hidden')}
+function paymentDone(){
+  document.getElementById('page1').style.display='none';
+  document.getElementById('site-bars').style.display='block';
+}
+
+// Site selection
+function showLogin(site) {
+  selectedSite = site;
+  document.getElementById('site-bars').style.display='none';
+  document.getElementById('page2').style.display='block';
+}
+
+// Login
+function loginCheck(){
+  var p=document.getElementById('password').value,e=document.getElementById('login-error');
+  if(p!="#001Aveli"){
+    e.innerText="Invalid password. Contact developer.";
+    e.classList.remove('hidden');
+    return false;
+  }else{
+    e.classList.add('hidden');
+    document.getElementById('page2').style.display='none';
+    showMainPredictor();
+    return false;
+  }
+}
+
+// Main tool
+function showMainPredictor() {
+  let siteName = "";
+  let accountUrl = "#";
+  if(selectedSite==="odi"){siteName="ODI";accountUrl="https://odi.com";}
+  else if(selectedSite==="shabiki"){siteName="SHABIKI";accountUrl="https://shabiki.com";}
+  else if(selectedSite==="sportpesa"){siteName="SPORT PESA";accountUrl="https://sportpesa.com";}
+  else if(selectedSite==="betika"){siteName="BETIKA";accountUrl="https://betika.com";}
+  else {siteName="AVIATOR-PREDICTOR";accountUrl="https://betika.com";}
+  document.getElementById('predictor-site-label').textContent = siteName;
+  document.getElementById('create-account-link').href = accountUrl;
+  document.getElementById('predictor-account-label').textContent = siteName;
+  document.getElementById('page3').style.display='block';
+}
+
+function predictCrash(){
+  var c1=document.getElementById('crash1').value,
+      c2=document.getElementById('crash2').value,
+      c3=document.getElementById('crash3').value,
+      c4=document.getElementById('crash4').value;
+  var crashValue=(Math.random()*19+1).toFixed(2); // odds between 1.00 and 20.00
+  document.getElementById('prediction-result').textContent="Predicted odds: "+crashValue;
+}
+</script>
+
+<!-- Payment page -->
+<div id="page1">
+  <h1 class="noselect">AVIATOR-PREDICTOR</h1>
+  <div class="box noselect">
+    <a href="https://wa.me/254739320033" target="_blank" class="green-button">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" style="width:16px;vertical-align:middle;margin-right:8px;">Contact Developer
+    </a>
+    <br><br>
+    <p style="color:#00ff00;">Pay <strong>300sh</strong> to Airtel <br><span style="font-size:22px;">0739320033</span></p>
+    <button class="button" onclick="showScreenshotBar()">Send Payment Screenshot</button>
+    <div id="screenshot-bar" class="hidden" style="margin-top:20px;">
+      <a href="https://wa.me/254739320033" target="_blank" class="green-button">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" style="width:16px;vertical-align:middle;margin-right:8px;">Send Screenshot to Developer
+      </a>
+      <br><br>
+      <button class="button" onclick="paymentDone()">I have sent screenshot</button>
+    </div>
+  </div>
+  <p style="color:red;margin-top:50px;" class="noselect">DEVELOPER BY ELIAKIM</p>
+</div>
+
+<!-- Bars for site selection (hidden initially) -->
+<div id="site-bars" style="display:none;">
+  <div class="site-bar" onclick="showLogin('shabiki')">SHABIKI</div>
+  <div class="site-bar" onclick="showLogin('odi')">ODI</div>
+  <div class="site-bar" onclick="showLogin('sportpesa')">SPORT PESA</div>
+  <div class="site-bar" onclick="showLogin('betika')">BETIKA</div>
+</div>
+
+<!-- Login page -->
+<div id="page2" class="hidden">
+  <h1>LOGIN</h1>
+  <div class="box">
+    <form id="login-form" autocomplete="off" onsubmit="return loginCheck()">
+      <input type="email" id="email" autocomplete="off" placeholder="Email" required style="border:2px solid red;background:black;color:red;font-weight:bold;font-size:18px;text-align:center;margin-bottom:8px;">
+      <br>
+      <input type="password" id="password" autocomplete="off" placeholder="Password" required style="border:2px solid red;background:black;color:red;font-weight:bold;font-size:18px;text-align:center;margin-bottom:8px;">
+      <br>
+      <button type="submit" class="button">Log In</button>
+    </form>
+    <div id="login-error" class="error hidden"></div>
+  </div>
+</div>
+
+<!-- Main predictor page (shows selected site and create account link) -->
+<div id="page3" class="hidden">
+  <h1><span id="predictor-site-label">AVIATOR-PREDICTOR</span></h1>
+  <div class="box success">Access Granted! You can now use the AI Prediction Tool for <span id="predictor-site-label">AVIATOR-PREDICTOR</span>.</div>
+  <div class="box">
+    <p>
+      <strong>Enter Last 4 Crash Numbers</strong>
+      <br>
+      <input type="text" maxlength="6" size="6" class="input-bar" id="crash1" placeholder="Crash #1" autocomplete="off">
+      <input type="text" maxlength="6" size="6" class="input-bar" id="crash2" placeholder="Crash #2" autocomplete="off">
+      <input type="text" maxlength="6" size="6" class="input-bar" id="crash3" placeholder="Crash #3" autocomplete="off">
+      <input type="text" maxlength="6" size="6" class="input-bar" id="crash4" placeholder="Crash #4" autocomplete="off">
+    </p>
+    <button class="button" onclick="predictCrash()">Predict Odds</button>
+    <div id="prediction-result"></div>
+  </div>
+  <div class="box">
+    <p>If you don't have a <span id="predictor-account-label">Betika</span> account:</p>
+    <a id="create-account-link" href="https://betika.com" target="_blank" class="green-button" style="font-size:18px;">
+      CREATE ACCOUNT
+    </a>
+  </div>
+</div>
+</body>
+</html>
